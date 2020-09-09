@@ -103,6 +103,9 @@ abstract class KotlinNativeTest : KotlinTest() {
     @get:Internal
     protected abstract val testCommand: TestCommand
 
+    @Internal
+    var debugMode = false
+
     override fun createTestExecutionSpec(): TCServiceMessagesTestExecutionSpec {
         val extendedForkOptions = DefaultProcessForkOptions(fileResolver)
         processOptions.copyTo(extendedForkOptions)
@@ -183,7 +186,12 @@ open class KotlinNativeHostTest : KotlinNativeTest() {
             testGradleFilter: Set<String>,
             testNegativeGradleFilter: Set<String>,
             userArgs: List<String>
-        ): List<String> = testArgs(testLogger, checkExitCode, testGradleFilter, testNegativeGradleFilter, userArgs)
+        ): List<String> = testArgs(
+            testLogger.takeIf { !debugMode },
+            if (!debugMode) checkExitCode else false,
+            if (!debugMode) testGradleFilter else emptySet(),
+            if (!debugMode) testNegativeGradleFilter else emptySet(),
+            userArgs)
     }
 }
 
@@ -194,9 +202,6 @@ open class KotlinNativeSimulatorTest : KotlinNativeTest() {
     @Input
     @Option(option = "device", description = "Sets a simulated device used to execute tests.")
     lateinit var deviceId: String
-
-    @Internal
-    var debugMode = false
 
     @get:Internal
     override val testCommand: TestCommand = object : TestCommand() {
